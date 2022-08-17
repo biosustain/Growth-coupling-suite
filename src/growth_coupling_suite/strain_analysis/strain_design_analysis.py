@@ -15,7 +15,6 @@ from types import SimpleNamespace
 from os.path import isfile
 from os import listdir, getcwd, mkdir
 import pickle
-from itertools import combinations
 from warnings import warn
 from pathlib import Path
 from copy import deepcopy
@@ -751,11 +750,6 @@ class StrainDesignAnalyzer(StrainAnalyzer):
         
         # get current solutions and reset solutions
         solutions = self.solutions.__dict__.copy()
-        # if adopt_significant_designs:
-        #     # save old solution space
-        #     self._solutions_deprecated = deepcopy(self.solutions)
-        #     # initiate new solution space
-        #     self.solutions = SimpleNamespace()
             
         # get significant designs from currently available solutions      
         count = 0
@@ -768,6 +762,7 @@ class StrainDesignAnalyzer(StrainAnalyzer):
             # load design solution
             sol.load()
             # determine significant subsets of currently loaded design
+
             design_subsets, smallest_design = self.determine_significant_designs(
                 design_objective,
                 target_reaction,
@@ -775,58 +770,7 @@ class StrainDesignAnalyzer(StrainAnalyzer):
                 minimum_significance=minimum_significance
                 )
             
-            # # calculate significant subset of current design
-            # # use design objective specific parameters
-            # if design_objective == "growth_coupling":  
-            #     # check available config parameter
-            #     parameter_needed = ["growth_rate_fix", "biomass_id"]
-            #     design_kwargs = {}
-            #     if not(all([hasattr(sol._config, parameter) for parameter in parameter_needed])):
-            #         warn("config parameter for design objective " + design_objective \
-            #              + " not available", UserWarning)
-            #     else:                                
-            #         # set gcOpt objective function
-            #         gr_tol = 1e-5 # allow for a small tolerance on the fix growth rate, complement gcOpt solver tolerance
-            #         design_kwargs["objective"] = target_reaction
-            #         design_kwargs["objective_direction"] = "min"
-            #         design_kwargs["additional_constraints"] \
-            #             = {sol._config.biomass_id: 
-            #                (sol._config.growth_rate_fix-gr_tol, sol._config.growth_rate_fix+gr_tol)}
-                            
-            # elif design_objective == "target_at_max_growth": 
-            #     # design objective is to maximize the minimal target reaction rate at maximum growth (RobustKnock)
-            #     # check available config parameter
-                
-            #     parameter_needed = ["biomass_id"]
-            #     design_kwargs = {}
-            #     if not(all([hasattr(sol._config, parameter) for parameter in parameter_needed])):
-            #         warn("config parameter for design objective " + design_objective \
-            #              + " not available", UserWarning)
-            #     else:                                
-            #         # set gcOpt objective function
-            #         design_kwargs["objective"] = sol._config.biomass_id
-            #         design_kwargs["objective_direction"] = "max"
-                            
-                            
-            # # calculate design objective for all combinations of full design
-            # # design_subsets, smallest_design = self.design_objects_significance(
-            # #     target_reaction=target_reaction,
-            # #     eval_gpr=eval_gpr,
-            # #     **design_kwargs
-            # #     )
-            
-            # design_subsets, smallest_design = design_significance(
-            #     self.model,
-            #     self._design,
-            #     self._reverse_design,
-            #     target_reaction=target_reaction,
-            #     eval_gpr=eval_gpr,
-            #     **design_kwargs
-            #     )
-            
-            
 
-            
             # check significance results
             if design_subsets.empty:
                 # even the full design is infeasible
@@ -983,13 +927,6 @@ class StrainDesignAnalyzer(StrainAnalyzer):
                 design_kwargs["objective"] = sol_config.biomass_id
                 design_kwargs["objective_direction"] = "max"
                         
-                        
-        # calculate design objective for all combinations of full design
-        # design_subsets, smallest_design = self.design_objects_significance(
-        #     target_reaction=target_reaction,
-        #     eval_gpr=eval_gpr,
-        #     **design_kwargs
-        #     )
         
         design_subsets, smallest_design = design_significance(
             self.model,
@@ -1263,7 +1200,6 @@ class StrainDesignAnalyzer(StrainAnalyzer):
             plots_dir = results_dir.joinpath("flux_space_plots")
             if not(plots_dir.is_dir()): mkdir(plots_dir)
             
-
         # get significant designs
         if determine_significant_designs:
             self.determine_significant_designs_from_solutions(
@@ -1273,6 +1209,7 @@ class StrainDesignAnalyzer(StrainAnalyzer):
                 minimum_significance=minimum_significance,
                 eval_gpr=eval_gpr
                 )
+
 
         # save strain design solutions
         if save_results:

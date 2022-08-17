@@ -62,35 +62,10 @@ def design_significance(
     # parameter
     # minimum_relative_significance = 0.1
     minimum_absolute_significance = 1e-4
-
-    # if not self._design:
-    #     warn("No design loaded!", UserWarning)
-    #     return pd.DataFrame(), {}
     
-    # get target reaction
-    # if not target_reaction:
-    #     if not target_reaction:
-    #         warn("No target reaction specified!", UserWarning)
-    #         return pd.DataFrame(), {}
-    #     else:
-    #         target_reaction = self.target_reaction
-        
-    # add previous to current design
-    # design_dict = {**self._design.copy(), **previous_design}
-    # design_dict = self._design.copy()
-    
-    # save results in data frame
-    combination_results = pd.DataFrame(columns=[
-        "interventions",
-        "excluded",
-        "excluded_index",
-        "objective_value",
-        "difference_objective_value",
-        "significance"
-        ],
-        dtype=object)
-
-    combination_results_insign = combination_results.copy()
+    # save each design in a dict and append to a list
+    combination_results_dicts = [] 
+    combination_results_insig_dicts = []
     
     with model:
         # set objective
@@ -129,7 +104,6 @@ def design_significance(
             full_design_feasible = False
             target_flux_full = 0
             
-            # return pd.DataFrame(), {}
         else:
             full_design_feasible = True
                    
@@ -156,21 +130,13 @@ def design_significance(
         idx_i_genes = [obj_keys.index(o_key) for o_key in obj_keys_genes]
         
         
-        
-
-        # # create combinations of design objects
-        # obj_comb = []
-        # for num in range(num_i-1):
-        #     obj_comb.extend(combinations(idx_i, num+1))
-          
-        
-        # create combinations of mediu compositions (if there are more than 2)
+        # create combinations of medium compositions (if there are more than 2)
         obj_comb_medium = [()]
         for num in range(num_i_medium-1):
             obj_comb_medium.extend(combinations(idx_i_medium, num+1))  
     
         # evaluate GPR and exclude infeasible combinations   
-        # no reaction targets are added here due to a GPR. Only couples of reactions from the design design are identified
+        # no reaction targets are added here due to a GPR. Only couples of reactions from the design are identified
         if eval_gpr:
             ID2Idx = {design_dict[obj_keys[i]]["ID"]: i for i in idx_i} # link reaction IDs to their indices
       
@@ -238,27 +204,10 @@ def design_significance(
                 obj_comb_genes.append(tuple(np.unique(obj)))
             
                 
-            
-                
-            # # exclude object combinations containing only parts of any GPR couple
-            # for comb in obj_comb.copy():
-            #     for couple in gpr_couples:
-            #         couple_set_diff = set(couple) - set(comb)
-            #         # either all or none of the coupled reactions must be in the combination
-            #         if (len(couple_set_diff) != 0) and (len(couple_set_diff) != len(couple)):
-            #             # exclude combination
-            #             del obj_comb[obj_comb.index(comb)]
-            
-  
-        
+    
                         
         else:
-            # do not consider GPR relation 
-            # obj_comb = []
-            # for num in range(num_i-1):
-            #     obj_comb.extend(combinations(idx_i, num+1))
-  
-                
+
             obj_comb_genes = [()]
             for num in range(num_i_genes-1):
                 obj_comb_genes.extend(combinations(idx_i_genes, num+1))  
@@ -284,9 +233,7 @@ def design_significance(
                 # only cofeed is the carbon source
                 cofeed_is_carbon_source = True
                 
-            
-            
-            obj_comb_sign = []
+ 
             obj_comb_insign = [] 
             for comb_genes in obj_comb_genes:
                 
@@ -298,25 +245,17 @@ def design_significance(
 
                 if cofeed_is_carbon_source and not(np.any(np.array(obj_type_active)=='addin')):
                     # dismiss design solution
-                    index = len(combination_results_insign)
-                    combination_results_insign.loc[index, :] = [
-                        [design_dict[obj_keys[j]]["ID"] for j in [i for i in idx_i if i not in comb]], # design objects still active
-                        [design_dict[obj_keys[j]]["ID"] for j in comb],
-                        [j for j in comb],
-                        None,
-                        None,
-                        -3
-                        ]
+                    combination_results_insig_dicts.append({
+                        "interventions": [design_dict[obj_keys[j]]["ID"] for j in [i for i in idx_i if i not in comb]], # design objects still active
+                        "excluded": [design_dict[obj_keys[j]]["ID"] for j in comb],
+                        "excluded_index": [j for j in comb],
+                        "objective_value": None,
+                        "difference_objective_value": None,
+                        "significance": -3
+                        })
+                    
                     continue
      
-                
-                # if combination contains a significant subset jump to next combination
-                # is_significant = False
-                # for o in obj_comb_sign:
-                #     if not(set(o) - set(comb)):
-                #         is_significant = True
-                #         break
-                # if is_significant: continue 
             
                 # if combination of excluded design variables contains an 
                 # insignificant subset jump to next combination
@@ -325,18 +264,17 @@ def design_significance(
                     if not(set(o) - set(comb)):
                         is_insignificant = True
                         break
+                    
                 if is_insignificant:
-                    #
-    
-                    index = len(combination_results_insign)
-                    combination_results_insign.loc[index, :] = [
-                        [design_dict[obj_keys[j]]["ID"] for j in [i for i in idx_i if i not in comb]], # design objects still active
-                        [design_dict[obj_keys[j]]["ID"] for j in comb],
-                        [j for j in comb],
-                        None,
-                        None,
-                        -2
-                        ]
+                    # dismiss design solution
+                    combination_results_insig_dicts.append({
+                        "interventions": [design_dict[obj_keys[j]]["ID"] for j in [i for i in idx_i if i not in comb]], # design objects still active
+                        "excluded": [design_dict[obj_keys[j]]["ID"] for j in comb],
+                        "excluded_index": [j for j in comb],
+                        "objective_value": None,
+                        "difference_objective_value": None,
+                        "significance": -2
+                        })
 
                     continue 
 
@@ -346,71 +284,34 @@ def design_significance(
                     model, reverse_design_dict, obj_keys_restore, design_dict,
                     target_reaction, target_flux_full
                     )
-                
-                index = len(combination_results)
-                combination_results.loc[index, :] = [
-                    [design_dict[obj_keys[j]]["ID"] for j in [i for i in idx_i if i not in comb]], # design objects still active
-                    [design_dict[obj_keys[j]]["ID"] for j in comb],
-                    [j for j in comb],
-                    target_flux,
-                    target_flux_diff,
-                    significance
-                    ]
-                
+                                
+                combination_results_dicts.append({
+                    "interventions": [design_dict[obj_keys[j]]["ID"] for j in [i for i in idx_i if i not in comb]], # design objects still active
+                    "excluded": [design_dict[obj_keys[j]]["ID"] for j in comb],
+                    "excluded_index": [j for j in comb],
+                    "objective_value": target_flux,
+                    "difference_objective_value": target_flux_diff,
+                    "significance": significance
+                    })
+
                 if significance < minimum_relative_significance and significance >= 0:
                     # design is feasible but insignificant
                     # infeasible subsets of designs may still lead to a smaller feasible subset when knockouts are removed
                     obj_comb_insign.append(comb)
+       
                 
-                # if full_design_feasible:
-                #     # store excluded design variables of leading to a significant design
-                #     if significance >= minimum_relative_significance:    
-                #         # obj_comb_sign.append(comb)
-                #         pass
-                #     else:
-                #         # store excluded design variables that lead to insignificant designs
-                #         obj_comb_insign.append(comb)
-                        
-                # else:
-                #     # aim to rescue infeasible full design, calculate allcombinations of design objects
-                #     pass
-                
-                # combination_results_temp = simulate_reduced_design(
-                #     model, reverse_design_dict, comb, obj_keys, design_dict, target_reaction,
-                #     target_flux_full, idx_i, combination_results_default.copy()
-                #     )
-                
-                # combination_results = combination_results.append(
-                #     combination_results_temp,
-                #     ignore_index=True
-                #     )  
-                
+    # significant designs
+    combination_results = pd.DataFrame(combination_results_dicts)
+                            
+    # add insignificant designs     
+    combination_results_insign = pd.DataFrame(combination_results_insig_dicts)
 
-                
-                # # identify significant subset of design objects
-                # if len(combination_results_temp) != 0:
-                #     for i, row in combination_results_temp.iterrows():
-                #         if full_design_feasible:
-                #             # if (row["significance"] <= 0.99): #| (row["significance"] >= 1.01):
-                #             if (row["significance"] >= minimum_relative_significance):    
-                #                 obj_comb_sign.append(row["excluded_index"])
-                #             else:
-                #                 # store excluded design variables that lead to insignificant designs
-                #                 obj_comb_insign.append(row["excluded_index"])
-                                
-                #         else:
-                #             # aim to rescue infeasible full design, calculate allcombinations of design objects
-                            
-                            
-                #             pass
-                            
-    # add insignificant designs                       
-    combination_results = combination_results.append(
-                    combination_results_insign,
-                    ignore_index=True
-                    )                     
-                            
-                
+    # merge designs
+    combination_results = pd.concat(
+        [combination_results, combination_results_insign],
+        ignore_index=True
+        )
+             
                 
     # sort results from low to high difference to target flux
     combination_results = combination_results.sort_values(
