@@ -1,5 +1,5 @@
 # Growth Coupling Suite
-Framework for computing and analyzing strain designs that couple a target reaction to growth. ([gcOpt](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-2946-7)) is used as the underlying optimization algorithm for deriving growth-coupled strain design solutions.  
+Framework for computing and analyzing strain designs that couple a target reaction to growth. [gcOpt](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-2946-7) is used as the underlying optimization algorithm for deriving growth-coupled strain design solutions.  
 
 ## Installation
 For a detailed installation manual, refer to the "docs" folder in this repository. The Growth Coupling Suite has been tested in Python >3.8. It is recommended to create a virtual python environment with, e.g., conda or virtualenv, for installing and using the Growth Coupling Suite.
