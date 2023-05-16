@@ -32,11 +32,12 @@ class KeggAPI():
     
         # save queries in this session
         self.library_filename = "kegg_query_library"       
-        # load library       
+        # set query options       
         self.query_library = {}
         self.query_dir_format = self.dir + "/query_library/kegg/{0}/" # 0: database
         self.query_file_format = "{0}_q_kegg_{1}.json" # 0: query text; 1: database
         self.query_file_format_option = "{0}_{2}_q_kegg_{1}.json" # 0: query text; 1: database; 2: option
+        # load library
         self.load_query_library()
         
 
@@ -331,6 +332,10 @@ class KeggAPI():
             else:
                 print("Abort")
                 return
+            
+        # create base folders if not existent
+        if not isdir(self.query_dir_format.format('')):
+            makedirs(self.query_dir_format.format(''))
         
         query_databases = [d
                             for d in listdir(self.query_dir_format.format(''))
@@ -353,24 +358,5 @@ class KeggAPI():
                         self.query_library[database][query_dict["query_text"]] \
                             = query_dict
             
-        
-                                   
-        # if isfile(filename):
-        #     # load existing libary
-        #     with open(filename, "r") as f:
-        #         self.query_library = json.load(f)
-            
-        #     # check if all database entries exist
-        #     keys_exist = list(self.query_library.keys())
-        #     for key in query_library_default.keys():
-        #         if not(key in keys_exist):
-        #             self.query_library[key] = {}
-                               
-        # else:
-        #     self.query_library = query_library_default
-                
-        
-                                         
-        
         
         

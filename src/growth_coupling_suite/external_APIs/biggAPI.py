@@ -144,7 +144,9 @@ class BiggAPI():
                 print("Abort")
                 return
                
-        
+        # create base folders if not existent
+        if not isdir(self.query_dir_format.format('')):
+            makedirs(self.query_dir_format.format(''))
         
         for database in query_databases:
             # init database
