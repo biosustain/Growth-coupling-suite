@@ -118,7 +118,7 @@ with sd.model as m:
                              upper_bound=0)
     met = m.metabolites.get_by_id("cpe180_c")
     source.add_metabolites({met: -1})
-    # m.add_reaction(source)
+    # m.add_reactions([source])
     
     sol = m.slim_optimize()
     # calculate flux space

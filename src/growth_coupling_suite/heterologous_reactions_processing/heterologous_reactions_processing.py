@@ -171,7 +171,7 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
     rxns_to_add_iter = rxns_to_add.copy()
     for rxn_id, rxn in rxns_to_add_iter.items():
         # add reaction to model
-        model.add_reaction(rxn)
+        model.add_reactions([rxn])
         # solve model
         sol_h = model.slim_optimize()
         # check growth
@@ -311,7 +311,7 @@ def extend_database_model(hrd_model, rxns_to_add):
             hrd_model_rxns[rxn_id].origin.append(rxn.origin)
         else:
             # add reaction to reaction database
-            hrd_model.add_reaction(rxn)
+            hrd_model.add_reactions([rxn])
             # save reaction
             hrd_model_rxns[rxn_id] = rxn
          
@@ -468,7 +468,7 @@ def extract_heterologous_reactions_from_model(model, h_model, currency_mets=conf
         # is mass balance correct in host model?
         with model:
             # add heterologous reaction
-            model.add_reaction(rxn.copy())
+            model.add_reactions([rxn.copy()])
             # check mass balance
             mass_balance_host = model.reactions.get_by_id(rxn.id).check_mass_balance()
             if not(mass_balance_host):

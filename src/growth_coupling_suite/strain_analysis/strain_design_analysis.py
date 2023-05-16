@@ -379,7 +379,7 @@ class StrainDesignAnalyzer(StrainAnalyzer):
                     source_reaction = cobra.Reaction(pt_id)
                     source_reaction.add_metabolites({met: -1})
                     source_reaction.bounds = (pt["lower_bound"], pt["upper_bound"])
-                    self.model.add_reaction(source_reaction)
+                    self.model.add_reactions([source_reaction])
                             
                     # save to reverse cofeed
                     self._reverse_design[pt_name] = {"ID": pt_id,
@@ -439,7 +439,7 @@ class StrainDesignAnalyzer(StrainAnalyzer):
                         
                         
                     # add reaction to model
-                    self.model.add_reaction(rxn_to_add)
+                    self.model.add_reactions([rxn_to_add])
 
                     # save to reverse addin
                     self._reverse_design[pt_name] = {"ID": pt["ID"],
@@ -1715,7 +1715,7 @@ class StrainDesignAnalyzer(StrainAnalyzer):
                         # delete reaction
                         hrd_model.reactions.get_by_id(intervent["ID"]).delete()
                         
-                    hrd_model.add_reaction(hrd_rxn)
+                    hrd_model.add_reactions([hrd_rxn])
                  
                 # if target is a deletion target in the design solution, delete
                 design_iter = deepcopy(design_solution)

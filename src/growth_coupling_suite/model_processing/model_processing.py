@@ -390,7 +390,7 @@ def set_source_targets(model,
         source_to_exchange.add_metabolites({
             met_source: 1,
             met: -1})
-        model.add_reaction(source_to_exchange)
+        model.add_reactions([source_to_exchange])
 
         
         
@@ -401,7 +401,7 @@ def set_source_targets(model,
                 and (ex.id not in config.source_targets):         
                 # create and add source reaction for metabolite
                 cofeed_reaction = create_source_reaction(met_source, -uptake_bound*config.cofeed_rate_factor, "cofeed_" + met.id)
-                model.add_reaction(cofeed_reaction)
+                model.add_reactions([cofeed_reaction])
                 # print(model.reactions.get_by_id(source_reaction.id))
                 # save target
                 cofeed_targets.append(cofeed_reaction.id)
@@ -415,7 +415,7 @@ def set_source_targets(model,
 
                 # create and add source reaction for metabolite
                 source_reaction = create_source_reaction(met_source, -uptake_bound, "source_" + met.id)
-                model.add_reaction(source_reaction)
+                model.add_reactions([source_reaction])
                 # print(model.reactions.get_by_id(source_reaction.id))
                 # save target
                 source_targets.append(source_reaction.id)

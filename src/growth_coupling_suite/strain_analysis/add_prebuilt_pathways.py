@@ -36,7 +36,7 @@ def tetrahydrobiopterin(model):
             dhbpt_c: 1
             })
         
-        model.add_reaction(THBPT4ACAMDASE)
+        model.add_reactions([THBPT4ACAMDASE])
     
     
     # add 6,7-dihydropteridine reductase
@@ -62,7 +62,7 @@ def tetrahydrobiopterin(model):
             thbpt_c: 1,
             })
         
-        model.add_reaction(DHPR)
+        model.add_reactions([DHPR])
       
     
     

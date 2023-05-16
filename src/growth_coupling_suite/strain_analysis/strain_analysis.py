@@ -398,7 +398,7 @@ class StrainAnalyzer():
                                                   lower_bound=0,
                                                   upper_bound=1000)
                         sink_rxn.add_metabolites({met: -1})
-                        model.add_reaction(sink_rxn)
+                        model.add_reactions([sink_rxn])
                         # calculate maximum sink flux
                         model.objective = sink_rxn_id 
                         precursor_fluxes[met.id] = model.slim_optimize()
@@ -603,7 +603,7 @@ class StrainAnalyzer():
                         model.metabolites.get_by_id(met): -1
                         })
                     # add to model
-                    model.add_reaction(source_rxn)
+                    model.add_reactions([source_rxn])
                     # solve model
                     sol_aux = model.optimize()
                     # check solution
