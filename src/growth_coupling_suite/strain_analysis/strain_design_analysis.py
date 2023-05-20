@@ -1299,9 +1299,9 @@ class StrainDesignAnalyzer(StrainAnalyzer):
             # calculate growth coupling strength
             summary.loc[sol_name, "coupling_strength"] = self.coupling_strength(self.target_reaction)
             
-            # calculate target reaction flux at maximum growth rate
-            summary.loc[sol_name, "target_flux_at_maximum_growth"] \
-                = self.flux_at_maximum_objective([self.target_reaction])[self.target_reaction]
+            # # calculate target reaction flux at maximum growth rate
+            # summary.loc[sol_name, "target_flux_at_maximum_growth"] \
+            #     = self.flux_at_maximum_objective([self.target_reaction])[self.target_reaction]
                 
             # mutable reaction fluxes at maximum growth rate
             summary.loc[sol_name, "mutables_flux_at_maximum_growth"] \

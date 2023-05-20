@@ -37,18 +37,23 @@ def blocked_reactions(model, reaction_list=[], remove_blocked_reactions=False):
     # manual fva (stumbled over problems with copied model)
     fva_res = []
     rxn_id = []
+    objective_save = model.objective
+    objective_direction_save = model.objective_direction
     for rxn in rxn_list:
-        with model:
-            rxn_id.append(rxn.id)
-            model.objective = rxn.id
-            # maximize
-            model.objective_direction = "max"
-            sol_max = model.slim_optimize()
-            # minimize
-            model.objective_direction = "min"
-            sol_min = model.slim_optimize()
-            # concatenate
-            fva_res.append([sol_min, sol_max])
+        rxn_id.append(rxn.id)
+        model.objective = rxn.id
+        # maximize
+        model.objective_direction = "max"
+        sol_max = model.slim_optimize()
+        # minimize
+        model.objective_direction = "min"
+        sol_min = model.slim_optimize()
+        # concatenate
+        fva_res.append([sol_min, sol_max])
+
+    # revert changes
+    model.objective = objective_save
+    model.objective_direction = objective_direction_save
             
     # create frame
     sol_fva = pd.DataFrame(fva_res, index=rxn_id, columns=["minimum", "maximum"])
@@ -101,6 +106,11 @@ def essential_reactions(model, reaction_list=[], objective_cutoff=1e-03):
                 continue
         reaction_list = reaction_list_valid
     
+    # check model feasibility
+    if model.slim_optimize() < objective_cutoff:
+        print('\t Model does not meet objective value cutoff. Reaction essentialities not computable.')
+        return []
+
     # identify essential reactions
     essential_reactions = []
     for rxn in reaction_list:

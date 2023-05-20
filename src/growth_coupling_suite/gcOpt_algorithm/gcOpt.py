@@ -409,6 +409,8 @@ class GCOpt():
 
 
 
+
+
     def _init_design_analysis(self):
         """
         create StrainDesignAnalyzer object and parse solutions
@@ -591,7 +593,7 @@ class GCOpt():
                 
         else:
             self.deletion_targets = []
-                    
+        print('\t', len(self.deletion_targets), ' deletion targets')
             
         # get addin targets and integrate in the model (heterologous reactions)
         if config.num_addins > 0:
@@ -601,6 +603,7 @@ class GCOpt():
                                                               config=config)
         else:
             self.addin_targets = []
+        print('\t', len(self.addin_targets), ' addin targets')
                     
         # get mediareduction targets
         if config.num_mediareductions > 0:
@@ -624,6 +627,9 @@ class GCOpt():
             self.cofeed_targets = [] 
             self.source_targets = []
             
+        print('\t', len(self.cofeed_targets), ' cofeed targets')
+        print('\t', len(self.source_targets), ' source targets')
+            
 
    
 
@@ -642,6 +648,8 @@ class GCOpt():
         print("Remove blocked reactions...")
         self.model, blocked_reactions \
             = reduce_model.blocked_reactions(self.model, remove_blocked_reactions=True)
+        print("\t", len(blocked_reactions), ' reactions blocked')
+
         # remove blocked reactions as target variables
         self.deletion_targets \
             = list(set(self.deletion_targets).difference(set(blocked_reactions)))
@@ -654,7 +662,7 @@ class GCOpt():
         self.mediareduction_targets \
             = list(set(self.mediareduction_targets).difference(set(blocked_reactions)))
         self.blocked_reactions = blocked_reactions
-        
+
         # identify essential reactions not be knocked out
         print("Identify essential reactions...")
         if self.config.consider_wildtype_essentiality:
@@ -670,7 +678,8 @@ class GCOpt():
         self.deletion_targets \
             = list(set(self.deletion_targets).difference(set(essential_reactions)))
         self.essential_reactions = essential_reactions
-        
+        print("\t", len(essential_reactions), ' reactions essential')
+
         
     def _create_bilevel_model(self):
         """
