@@ -97,16 +97,17 @@ class StrainAnalyzer():
                 target_rxn = self.target_reaction
             
         # protect model
-        objective_save = self.model.objective
-        objective_direction_save = self.model.objective_direction
-        model_m = self.model
+        # objective_save = self.model.objective
+        # objective_direction_save = self.model.objective_direction
+        # model_m = self.model
 
         # with self.model as model_m:    
         
+        # Determine reference reaction from objective function
         if not(reference_rxn):
             # identifiy objective function
             objective_rxn = []
-            for rxn in model_m.reactions:
+            for rxn in self.model.reactions:
                 if rxn.objective_coefficient != 0:
                     objective_rxn.append(rxn.id)
             if len(objective_rxn) != 1:
@@ -116,24 +117,24 @@ class StrainAnalyzer():
                 
         else:
             # reference reaction provided
-            if reference_rxn not in [rxn.id for rxn in model_m.reactions]:
+            if reference_rxn not in [rxn.id for rxn in self.model.reactions]:
                 raise Exception("Reference reaction " + reference_rxn + " is not in model")
             
         # check target reaction
-        if target_rxn not in [rxn.id for rxn in model_m.reactions]:
+        if target_rxn not in [rxn.id for rxn in self.model.reactions]:
                 raise Exception("Target reaction " + target_rxn + " is not in model")
         else:
-            target_rxn_obj = model_m.reactions.get_by_id(target_rxn)
-                
-    
-        # calculate maximum/minimum reference reaction flux
-        model_m.objective = reference_rxn
-        model_m.objective_direction = "max"
-        ref_max = model_m.slim_optimize()
-        model_m.objective_direction = "min"
-        ref_min = model_m.slim_optimize()
-        
+            target_rxn_obj = self.model.reactions.get_by_id(target_rxn)
 
+        # protect model and compute range of reference reaction flux
+        with self.model as model_m:             
+            # calculate maximum/minimum reference reaction flux
+            model_m.objective = reference_rxn
+            model_m.objective_direction = "max"
+            ref_max = model_m.slim_optimize()
+            model_m.objective_direction = "min"
+            ref_min = model_m.slim_optimize()
+            
         # check if reference reaction can be active
         if np.isnan(ref_max) or np.isnan(ref_min):
             warn("Reference reaction " + reference_rxn + " cannot carry any flux!", UserWarning)
@@ -144,163 +145,166 @@ class StrainAnalyzer():
         
         # scan flux space for target reaction
         reference_grid = np.linspace(ref_min, ref_max, grid_size)
-      
-        ref_rxn = model_m.reactions.get_by_id(reference_rxn)
-        ref_rxn_bounds_save = ref_rxn.bounds
-        model_m.objective = target_rxn #  set objective function
-        
-        # define factors for unit transformation
-        if target_rxn in unit_transformation_factors:
-            target_unit_t = unit_transformation_factors[target_rxn]
-        else:
-            target_unit_t = 1
-            
-        if reference_rxn in unit_transformation_factors:
-            ref_unit_t = unit_transformation_factors[reference_rxn]
-        else:
-            ref_unit_t = 1
 
+        # protect model and compute flux space
+        with self.model as model_m:  
         
-        fs_lb = np.empty([0,1])
-        fs_ub = np.empty([0,1])
-        
-        # distinguish between yield and flux space
-        if yield_space:
-            # calculate yield space from reaction yields
-            # check yield reference reaction, normally the substrate uptake reaction
-            if not(yield_reference_reaction) or (yield_reference_reaction not in model_m.reactions):
-                raise Exception("Yield reference reaction " + yield_reference_reaction + " is not available")
+            ref_rxn = model_m.reactions.get_by_id(reference_rxn)
+            # ref_rxn_bounds_save = ref_rxn.bounds
+            model_m.objective = target_rxn #  set objective function
+            
+            # define factors for unit transformation
+            if target_rxn in unit_transformation_factors:
+                target_unit_t = unit_transformation_factors[target_rxn]
             else:
-                ref_yield_rxn = model_m.reactions.get_by_id(yield_reference_reaction)
-                # define unit transformation
-                if yield_reference_reaction in unit_transformation_factors:
-                    yield_ref_unit_t = unit_transformation_factors[yield_reference_reaction]
+                target_unit_t = 1
+                
+            if reference_rxn in unit_transformation_factors:
+                ref_unit_t = unit_transformation_factors[reference_rxn]
+            else:
+                ref_unit_t = 1
+
+            
+            fs_lb = np.empty([0,1])
+            fs_ub = np.empty([0,1])
+            
+            # distinguish between yield and flux space
+            if yield_space:
+                # calculate yield space from reaction yields
+                # check yield reference reaction, normally the substrate uptake reaction
+                if not(yield_reference_reaction) or (yield_reference_reaction not in model_m.reactions):
+                    raise Exception("Yield reference reaction " + yield_reference_reaction + " is not available")
                 else:
-                    yield_ref_unit_t = 1
-            
-            
-            # save target reaction bounds
-            target_rxn_bounds = target_rxn_obj.bounds
-            
-            ref_yield_lb = np.empty([0,1])  
-            ref_yield_ub = np.empty([0,1]) 
-            
-            for grid_point in reference_grid:
-                # fix reference flux
-                ref_rxn.bounds = (grid_point, grid_point)
-                # ref_rxn.lower_bound = grid_point
-                # ref_rxn.upper_bound = grid_point
+                    ref_yield_rxn = model_m.reactions.get_by_id(yield_reference_reaction)
+                    # define unit transformation
+                    if yield_reference_reaction in unit_transformation_factors:
+                        yield_ref_unit_t = unit_transformation_factors[yield_reference_reaction]
+                    else:
+                        yield_ref_unit_t = 1
+                
+                
+                # save target reaction bounds
+                target_rxn_bounds = target_rxn_obj.bounds
+                
+                ref_yield_lb = np.empty([0,1])  
+                ref_yield_ub = np.empty([0,1]) 
+                
+                for grid_point in reference_grid:
+                    # fix reference flux
+                    ref_rxn.bounds = (grid_point, grid_point)
+                    # ref_rxn.lower_bound = grid_point
+                    # ref_rxn.upper_bound = grid_point
 
-                # calculate upper flux space bound
-                model_m.objective = target_rxn #  set objective function
-                model_m.objective_direction = "max"
-                sol_t = model_m.slim_optimize(error_value="infeasible")
-                if sol_t == "infeasible":
-                    continue
-                # calculate minimal corresponding yield reference flux
-                target_rxn_obj.bounds = (sol_t, sol_t)
-                # target_rxn_obj.lower_bound = sol_t
-                # target_rxn_obj.upper_bound = sol_t
-                model_m.objective = yield_reference_reaction
-                model_m.objective_direction = "min"
-                sol_r = model_m.slim_optimize()
-                # reset bounds
-                target_rxn_obj.bounds = target_rxn_bounds
-                # target_rxn_obj.lower_bound = target_rxn_bounds[0]
-                # target_rxn_obj.upper_bound = target_rxn_bounds[1]
-                # check solution
-                if abs(sol_r) < 1e-4:
-                    # dismiss solution to avoid dividing by zero
-                    continue
-                # save
-                fs_ub = np.append(fs_ub, (sol_t*target_unit_t) / (-sol_r*yield_ref_unit_t))
-                ref_yield_ub = np.append(ref_yield_ub, (grid_point*ref_unit_t) / (-sol_r*yield_ref_unit_t))
-                
-                # calculate lower flux space bound
-                model_m.objective = target_rxn #  set objective function
-                model_m.objective_direction = "min"      
-                sol_t = model_m.slim_optimize()
-                # calculate minimal corresponding yield reference flux
-                target_rxn_obj.bounds = (sol_t, sol_t)
-                # target_rxn_obj.lower_bound = sol_t
-                # target_rxn_obj.upper_bound = sol_t
-                model_m.objective = yield_reference_reaction
-                model_m.objective_direction = "min"
-                sol_r = model_m.slim_optimize()
-                # reset bounds
-                target_rxn_obj.bounds = target_rxn_bounds
-                # target_rxn_obj.lower_bound = target_rxn_bounds[0]
-                # target_rxn_obj.upper_bound = target_rxn_bounds[1]
-                # save
-                fs_lb = np.append(fs_lb, (sol_t*target_unit_t) / (-sol_r*yield_ref_unit_t))
-                ref_yield_lb = np.append(ref_yield_lb, (grid_point*ref_unit_t) / (-sol_r*yield_ref_unit_t))
-                                            
-            # combine to a closed flux space
-            x_data = np.concatenate((ref_yield_ub, np.flip(ref_yield_lb), ref_yield_ub[:1]), axis=0)
-            y_data = np.concatenate((fs_ub, np.flip(fs_lb), fs_ub[:1]), axis=0)
-                
-        else:
-            # calculate flux space from flux rates
-            for grid_point in reference_grid:
-                # fix reference flux
+                    # calculate upper flux space bound
+                    model_m.objective = target_rxn #  set objective function
+                    model_m.objective_direction = "max"
+                    sol_t = model_m.slim_optimize(error_value="infeasible")
+                    if sol_t == "infeasible":
+                        continue
+                    # calculate minimal corresponding yield reference flux
+                    target_rxn_obj.bounds = (sol_t, sol_t)
+                    # target_rxn_obj.lower_bound = sol_t
+                    # target_rxn_obj.upper_bound = sol_t
+                    model_m.objective = yield_reference_reaction
+                    model_m.objective_direction = "min"
+                    sol_r = model_m.slim_optimize()
+                    # reset bounds
+                    target_rxn_obj.bounds = target_rxn_bounds
+                    # target_rxn_obj.lower_bound = target_rxn_bounds[0]
+                    # target_rxn_obj.upper_bound = target_rxn_bounds[1]
+                    # check solution
+                    if abs(sol_r) < 1e-4:
+                        # dismiss solution to avoid dividing by zero
+                        continue
+                    # save
+                    fs_ub = np.append(fs_ub, (sol_t*target_unit_t) / (-sol_r*yield_ref_unit_t))
+                    ref_yield_ub = np.append(ref_yield_ub, (grid_point*ref_unit_t) / (-sol_r*yield_ref_unit_t))
+                    
+                    # calculate lower flux space bound
+                    model_m.objective = target_rxn #  set objective function
+                    model_m.objective_direction = "min"      
+                    sol_t = model_m.slim_optimize()
+                    # calculate minimal corresponding yield reference flux
+                    target_rxn_obj.bounds = (sol_t, sol_t)
+                    # target_rxn_obj.lower_bound = sol_t
+                    # target_rxn_obj.upper_bound = sol_t
+                    model_m.objective = yield_reference_reaction
+                    model_m.objective_direction = "min"
+                    sol_r = model_m.slim_optimize()
+                    # reset bounds
+                    target_rxn_obj.bounds = target_rxn_bounds
+                    # target_rxn_obj.lower_bound = target_rxn_bounds[0]
+                    # target_rxn_obj.upper_bound = target_rxn_bounds[1]
+                    # save
+                    fs_lb = np.append(fs_lb, (sol_t*target_unit_t) / (-sol_r*yield_ref_unit_t))
+                    ref_yield_lb = np.append(ref_yield_lb, (grid_point*ref_unit_t) / (-sol_r*yield_ref_unit_t))
+                                                
+                # combine to a closed flux space
+                x_data = np.concatenate((ref_yield_ub, np.flip(ref_yield_lb), ref_yield_ub[:1]), axis=0)
+                y_data = np.concatenate((fs_ub, np.flip(fs_lb), fs_ub[:1]), axis=0)
+                    
+            else:
+                # calculate flux space from flux rates
+                for grid_point in reference_grid:
+                    # fix reference flux
 
-                ref_rxn.bounds = (grid_point, grid_point)
-                # ref_rxn.lower_bound = grid_point
-                # ref_rxn.upper_bound = grid_point
-                
-                # calculate lower and upper flux space bound
-                model_m.objective_direction = "max"
-                fs_ub = np.append(fs_ub, model_m.slim_optimize())
-                model_m.objective_direction = "min"
-                fs_lb = np.append(fs_lb, model_m.slim_optimize())
-                
-            # combine to a closed flux space
-            x_data = np.concatenate((reference_grid, np.flip(reference_grid), reference_grid[:1]), axis=0)
-            y_data = np.concatenate((fs_ub, np.flip(fs_lb), fs_ub[:1]), axis=0)
-                
-        # save and return data
-        flux_space = {"x_data": x_data,
-                        "y_data": y_data,
-                        "x_label": reference_rxn,
-                        "y_label": target_rxn
-            }  
-        
-        if yield_space:
-            flux_space["x_label"] = flux_space["x_label"] + " yield"
-            flux_space["y_label"] = flux_space["y_label"] + " yield"
-        
-        self._flux_space = flux_space
-        
-        # plot projection
-        if plot:
-            # parse keyword arguments
-            kwargs_parse = {}
-            for key, arg in kwargs.items():
-                if key in ["dpi", "figsize"]:
-                    kwargs_parse[key] = arg
-            # plot data
-            self.plot_2D(x_data,
-                            y_data,
-                            x_label=reference_rxn,
-                            y_label=target_rxn,
-                            save_name=save_name,
-                            **kwargs_parse)
-            # # fill accessible flux space with color
-            # if fill_flux_space:
-            #     self.axes.fill_between(x_data, 0, y_data, alpha=0.7)
-            # # change labels of x and y axes
-            # if xlabel:
-            #     self.axes.set_xlabel(xlabel)
-            # if ylabel:
-            #     self.axes.set_ylabel(ylabel)
+                    ref_rxn.bounds = (grid_point, grid_point)
+                    # ref_rxn.lower_bound = grid_point
+                    # ref_rxn.upper_bound = grid_point
+                    
+                    # calculate lower and upper flux space bound
+                    model_m.objective_direction = "max"
+                    fs_ub = np.append(fs_ub, model_m.slim_optimize())
+                    model_m.objective_direction = "min"
+                    fs_lb = np.append(fs_lb, model_m.slim_optimize())
+                    
+                # combine to a closed flux space
+                x_data = np.concatenate((reference_grid, np.flip(reference_grid), reference_grid[:1]), axis=0)
+                y_data = np.concatenate((fs_ub, np.flip(fs_lb), fs_ub[:1]), axis=0)
+                    
+            # save and return data
+            flux_space = {"x_data": x_data,
+                            "y_data": y_data,
+                            "x_label": reference_rxn,
+                            "y_label": target_rxn
+                }  
             
-            # return self.axes
+            if yield_space:
+                flux_space["x_label"] = flux_space["x_label"] + " yield"
+                flux_space["y_label"] = flux_space["y_label"] + " yield"
+            
+            self._flux_space = flux_space
+            
+            # plot projection
+            if plot:
+                # parse keyword arguments
+                kwargs_parse = {}
+                for key, arg in kwargs.items():
+                    if key in ["dpi", "figsize"]:
+                        kwargs_parse[key] = arg
+                # plot data
+                self.plot_2D(x_data,
+                                y_data,
+                                x_label=reference_rxn,
+                                y_label=target_rxn,
+                                save_name=save_name,
+                                **kwargs_parse)
+                # # fill accessible flux space with color
+                # if fill_flux_space:
+                #     self.axes.fill_between(x_data, 0, y_data, alpha=0.7)
+                # # change labels of x and y axes
+                # if xlabel:
+                #     self.axes.set_xlabel(xlabel)
+                # if ylabel:
+                #     self.axes.set_ylabel(ylabel)
+                
+                # return self.axes
 
-            # revert model changes
-            model_m.objective = objective_save
-            model_m.objective_direction = objective_direction_save
-            ref_rxn.bounds = ref_rxn_bounds_save
-              
+                # revert model changes
+                # model_m.objective = objective_save
+                # model_m.objective_direction = objective_direction_save
+                # ref_rxn.bounds = ref_rxn_bounds_save
+                
         return flux_space
         
 
@@ -347,10 +351,11 @@ class StrainAnalyzer():
         """
         # calculate flux space
         if not flux_space:
-            flux_space = self.flux_space_projection(target_rxn,
-                                                reference_rxn,
-                                                grid_size=grid_size,
-                                                plot=False)
+            flux_space = self.flux_space_projection(
+                target_rxn=target_rxn,
+                reference_rxn=reference_rxn,
+                grid_size=grid_size,
+                plot=False)
             if not flux_space:
                 # flux space could not be calculated
                 return None
@@ -426,18 +431,23 @@ class StrainAnalyzer():
             for met, coeff in rxn.metabolites.items():
                 if coeff < 0:
                     # is a precursor or educt, create sink for metabolite
-                    with model:
-                        sink_rxn_id = "sink_" + met.id
-                        sink_rxn = cobra.Reaction(sink_rxn_id,
-                                                  lower_bound=0,
-                                                  upper_bound=1000)
-                        sink_rxn.add_metabolites({met: -1})
+                    sink_rxn_id = "sink_" + met.id
+                    sink_rxn = cobra.Reaction(
+                        sink_rxn_id,
+                        lower_bound=0,
+                        upper_bound=1000)
+                    sink_rxn.add_metabolites({met: -1})
+
+                    with model:     
                         model.add_reactions([sink_rxn])
                         # calculate maximum sink flux
                         model.objective = sink_rxn_id 
                         precursor_fluxes[met.id] = model.slim_optimize()
-                        # if precursor synthesis is blocked try to rescue target reaction
-                        if precursor_fluxes[met.id] == 0:
+
+                    # if precursor synthesis is blocked try to rescue target reaction 
+                    if precursor_fluxes[met.id] == 0:   
+                        with model: 
+                            model.add_reactions([sink_rxn])
                             sink_rxn.lower_bound = -1000
                             model.objective = target_rxn
                             target_rxn_rescue_flux[met.id] = model.slim_optimize()
