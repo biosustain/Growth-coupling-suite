@@ -395,6 +395,9 @@ class GCOpt():
         self._create_base_model()
         
         # reduce model and target space
+        # properties of the model used for reduction
+        # - activated all (potential) carbon and cofeed source reactions
+        # - all heterologous knock-in target reactions added
         self._reduce_model_complexity()
         
         # prepare model
