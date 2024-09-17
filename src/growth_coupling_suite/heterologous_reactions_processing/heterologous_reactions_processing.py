@@ -118,17 +118,18 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
     # load heterologous models if new database is constructed
     print("Update heterologous reaction database...")
     h_models = []
-    # for h_model_id in h_model_ids:
-    #     if not(h_model_id in hrd_model_origin.heterologous_model_sources):
-    #         print("\t" + h_model_id)
-    #         h_models.append(cobra.io.load_json_model(str(md_dir.joinpath(h_model_id + ".json"))))
-    #     else:
-    #         print("\t" + "Reactions of " + h_model_id + " already in heterologous reaction database")
-
-    if not(hrd_model_origin):
-        for h_model_id in h_model_ids:
+    for h_model_id in h_model_ids:
+        if not(h_model_id in hrd_model_origin.heterologous_model_sources):
             print("\t" + h_model_id)
             h_models.append(cobra.io.load_json_model(str(md_dir.joinpath(h_model_id + ".json"))))
+        else:
+            print("\t" + "Reactions of " + h_model_id + " already in heterologous reaction database")
+
+    # if not(hrd_model_origin):
+    #     print(h_model_ids)
+    #     for h_model_id in h_model_ids:
+    #         print("\t" + h_model_id)
+    #         h_models.append(cobra.io.load_json_model(str(md_dir.joinpath(h_model_id + ".json"))))
    
     # get list of reactions in database
     rxns_in_database = []
