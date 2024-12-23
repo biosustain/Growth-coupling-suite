@@ -134,7 +134,7 @@ dmypy.json
 /example/results_parallel
 /example/Gurobi log files/
 /src/growth_coupling_suite/external_APIs/query_library/
-#/src/growth_coupling_suite/heterologous_reactions_processing/heterologous_reactions_database/
+/src/growth_coupling_suite/heterologous_reactions_processing/heterologous_reactions_database/
 /tests/Results/
 
 
