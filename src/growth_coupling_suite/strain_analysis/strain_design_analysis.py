@@ -797,7 +797,8 @@ class StrainDesignAnalyzer(StrainAnalyzer):
                 bin_num = round(bin_num)
                 
             design_groups = design_significant_dataframe.groupby(
-                pd.cut(design_significant_dataframe["significance"], bin_num)
+                pd.cut(design_significant_dataframe["significance"],bin_num),
+                observed=False
                 )
             
             

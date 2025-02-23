@@ -249,8 +249,8 @@ def design_significance(
                         "interventions": [design_dict[obj_keys[j]]["ID"] for j in [i for i in idx_i if i not in comb]], # design objects still active
                         "excluded": [design_dict[obj_keys[j]]["ID"] for j in comb],
                         "excluded_index": [j for j in comb],
-                        "objective_value": None,
-                        "difference_objective_value": None,
+                        "objective_value": -3,
+                        "difference_objective_value": -3,
                         "significance": -3
                         })
                     
@@ -271,8 +271,8 @@ def design_significance(
                         "interventions": [design_dict[obj_keys[j]]["ID"] for j in [i for i in idx_i if i not in comb]], # design objects still active
                         "excluded": [design_dict[obj_keys[j]]["ID"] for j in comb],
                         "excluded_index": [j for j in comb],
-                        "objective_value": None,
-                        "difference_objective_value": None,
+                        "objective_value": -2,
+                        "difference_objective_value": -2,
                         "significance": -2
                         })
 
@@ -423,16 +423,6 @@ def simulate_reduced_design(
             target_flux_diff = None
             significance = -1
 
-        # index = len(combination_results)
-        # combination_results.loc[index, :] = [
-        #     [design_dict[obj_keys[j]]["ID"] for j in [i for i in idx_obj_all if i not in idx_obj_restore]], # design objects still active
-        #     [design_dict[obj_keys[j]]["ID"] for j in idx_obj_restore],
-        #     [j for j in idx_obj_restore],
-        #     target_flux,
-        #     target_flux_diff,
-        #     significance
-        #     ]
-        
     return (target_flux, target_flux_diff, significance)   
     # return combination_results
 
