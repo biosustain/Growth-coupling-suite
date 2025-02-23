@@ -17,7 +17,7 @@ import cobra
 from types import SimpleNamespace
 from copy import deepcopy
 import pickle
-from os import mkdir, listdir
+from os import mkdir, listdir, getcwd
 from os.path import isdir, isfile
 import shutil
 from warnings import warn
@@ -79,10 +79,12 @@ class GCOpt():
         self.target_rxn = target_rxn
         self.hr_database_model = hr_database_model
         
-        # create necessary directories for saving results
+        # create necessary directories for saving results and models
         if not(isdir(config.output_dir)): mkdir(config.output_dir)
         self.callback_output_dir = config.output_dir + "/callback_solutions"
         if not(isdir(self.callback_output_dir)): mkdir(self.callback_output_dir)
+        self.hrd_dir = getcwd() + "/heterologous_reaction_database"
+        if not(isdir(self.hrd_dir)): mkdir(self.hrd_dir)
         
         # initialize gcOpt problem  
         if build_gcopt_problem:
@@ -602,6 +604,7 @@ class GCOpt():
         if config.num_addins > 0:
             self.model, self.addin_targets, self.hr_database_model \
                 = model_processing.add_heterologous_reactions(self.model,
+                                                              self.hrd_dir,
                                                               hr_database_model=self.hr_database_model,
                                                               config=config)
         else:

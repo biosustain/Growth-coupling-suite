@@ -13,7 +13,8 @@ import cobra
 
 
 
-def add_heterologous_reactions(model, hr_database_model=None, 
+def add_heterologous_reactions(model, hr_database_dir,
+                               hr_database_model=None,
                                config=config_default):
     """
     Extract, process, and add heterologous reactions to a (host) model
@@ -46,9 +47,13 @@ def add_heterologous_reactions(model, hr_database_model=None,
     if not(hr_database_model):
         # get heterologous reaction from database 
         with model:
-            hr_database_model_out, hr_database_model_origin_out = hrp.get_heterologous_reactions(model,
-                                                          config=config,
-                                                          reprocess=False)
+            hr_database_model_out, hr_database_model_origin_out \
+                = hrp.get_heterologous_reactions(
+                    model,
+                    model_path=hr_database_dir,
+                    config=config,
+                    reprocess=False
+                    )
     
         # choose assessed or unassessed heterologous database
         if hasattr(config, "directionality_assessment"):

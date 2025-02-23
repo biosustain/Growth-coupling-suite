@@ -204,11 +204,8 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
             config=config,
             model_name=hrd_model_name
             )
-        
-        return hrd_model, hrd_model_origin
     
     else:
-        # return database model
         hrd_model = None
         
         
@@ -296,19 +293,30 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
 
 
 def model_directionality_assessement(model, config=config_default, model_name="hr_database"):
+    # write the docstrings for the reaction
     """
-    assess reaction directions of heterologous reactions in a model based on thermodynamics and flux variabilities
+    assess reaction directions of heterologous reactions in a model
+
+    Parameters
+    ----------
+    model : cobra.Model
+        COBRA model.
+    config : module, optional
+        contains optional parameters. The default is config_default.
+    model_name : str, optional
+        name of the model. The default is "hr_database".
     
-    
-    
-    
+    Returns
+    -------
+    hrd_model : cobra.Model
+        COBRA model containing all identified heterologous reactions. Reaction directions assessed
+
     """
-    
+ 
     
     hrd_model = cobra.Model(model_name)
     
     # get unassessed reactions from database
-    # get original reactions from database
     rxns_to_add = {}
     rxns_to_add_id = []
     for rxn in model.reactions:
@@ -317,7 +325,6 @@ def model_directionality_assessement(model, config=config_default, model_name="h
         rxns_to_add_id.append(rxn_id)
            
     if len(rxns_to_add) > 0:
-        print("Hallo")
         rxns_to_add, directions = evaluate_reaction_directionalities(model, rxns_to_add,
                                                           config)
       

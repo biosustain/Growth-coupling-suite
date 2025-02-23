@@ -14,11 +14,11 @@ dependencies = [
     "gurobipy==9.5.2",
     "equilibrator-api==0.6.0",
     "requests==2.28.1",
-    "matplotlib==3.5.3",
+    "matplotlib==3.9.4",
     "XlsxWriter==3.0.3",
-    "openpyxl~=3.0.10",
-    "ipykernel"
+    "openpyxl~=3.1.0",
+    "ipykernel",
+    "pytest"
 ]
 
 [project.optional-dependencies]
-test = ["pytest"]
