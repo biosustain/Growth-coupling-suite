@@ -195,6 +195,14 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
     # save heterologous reaction database, unassessed
     extend_database_model(hrd_model_origin, rxns_to_add)
     
+    # save unassessed heterologous database model
+    if save_models:
+        save_heterologous_database_model(
+            hrd_model_origin,
+            hrd_model_name,
+            model_path,
+            reaction_direction_assessed=False
+            )
  
         
     if config.directionality_assessment:
@@ -204,19 +212,21 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
             config=config,
             model_name=hrd_model_name
             )
+        
+        # save heterologous database model
+        if save_models:
+            save_heterologous_database_model(
+                hrd_model,
+                hrd_model_name,
+                model_path,
+                reaction_direction_assessed=True
+                )
     
     else:
         hrd_model = None
         
         
-    # save models
-    if save_models:
-        save_heterologous_database_model(
-            hrd_model_origin,
-            hrd_model_name,
-            model_path,
-            reaction_direction_assessed=False
-            )
+
 
     return hrd_model, hrd_model_origin
     
