@@ -178,18 +178,19 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
                 rxns_to_add_id.append(rxn_id)
     
     # exclude reactions with irreasonable effect on growth
-    sol_wt = model.slim_optimize()
-    rxns_to_add_iter = rxns_to_add.copy()
-    for rxn_id, rxn in rxns_to_add_iter.items():
-        model.add_reactions([rxn])
-        sol_h = model.slim_optimize()
-        if sol_h > (sol_wt*2):
-            del(rxns_to_add[rxn_id])
-            del(rxns_to_add_id[rxns_to_add_id.index(rxn_id)])
-            print("Disregard " + rxn_id + " (Objective value: " + str(round(sol_h, 3)) + ")")
-            
-        # remove reaction again and continue
-        model.remove_reactions([model.reactions.get_by_id(rxn_id)])
+    with model: 
+        sol_wt = model.slim_optimize()
+        rxns_to_add_iter = rxns_to_add.copy()
+        for rxn_id, rxn in rxns_to_add_iter.items():
+            model.add_reactions([rxn])
+            sol_h = model.slim_optimize()
+            if sol_h > (sol_wt*2):
+                del(rxns_to_add[rxn_id])
+                del(rxns_to_add_id[rxns_to_add_id.index(rxn_id)])
+                print("Disregard " + rxn_id + " (Objective value: " + str(round(sol_h, 3)) + ")")
+                
+            # remove reaction again and continue
+            model.remove_reactions([model.reactions.get_by_id(rxn_id)])
     
     
     # save heterologous reaction database, unassessed

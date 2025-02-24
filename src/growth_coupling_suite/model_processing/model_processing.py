@@ -46,14 +46,14 @@ def add_heterologous_reactions(model, hr_database_dir,
     # was a heterolgous reaction database model provided?
     if not(hr_database_model):
         # get heterologous reaction from database 
-        with model:
-            hr_database_model_out, hr_database_model_origin_out \
-                = hrp.get_heterologous_reactions(
-                    model,
-                    model_path=hr_database_dir,
-                    config=config,
-                    reprocess=False
-                    )
+        #with model:
+        hr_database_model_out, hr_database_model_origin_out \
+            = hrp.get_heterologous_reactions(
+                model,
+                model_path=hr_database_dir,
+                config=config,
+                reprocess=False
+                )
     
         # choose assessed or unassessed heterologous database
         if hasattr(config, "directionality_assessment"):
