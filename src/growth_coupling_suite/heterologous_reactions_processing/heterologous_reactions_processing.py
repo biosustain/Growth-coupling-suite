@@ -94,9 +94,7 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
     
     
     hrd_model_name = model.id + "_hr_database"
-    # hrd_model_format = "{0}{1}.pickle"
-    # hrd_model_feature = ""
-    
+   
     
     if reprocess:
         hrd_model_origin = []
@@ -113,17 +111,24 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
         print("Create a new heterologous reaction database")
         # set up new database model in a cobra format
         hrd_model_origin = cobra.Model(hrd_model_name)
-        setattr(hrd_model_origin, "heterologous_model_sources", [])
-               
+        #setattr(hrd_model_origin, "heterologous_model_sources", [])
+     
+    # load heterologous models   
+    h_models = []    
+    for h_model_id in h_model_ids:
+        print("\t" + h_model_id)
+        h_models.append(cobra.io.load_json_model(str(md_dir.joinpath(h_model_id + ".json"))))
+
+            
     # load heterologous models if new database is constructed
     print("Update heterologous reaction database...")
-    h_models = []
-    for h_model_id in h_model_ids:
-        if not(h_model_id in hrd_model_origin.heterologous_model_sources):
-            print("\t" + h_model_id)
-            h_models.append(cobra.io.load_json_model(str(md_dir.joinpath(h_model_id + ".json"))))
-        else:
-            print("\t" + "Reactions of " + h_model_id + " already in heterologous reaction database")
+    # h_models = []
+    # for h_model_id in h_model_ids:
+    #     if not(h_model_id in hrd_model_origin.heterologous_model_sources):
+    #         print("\t" + h_model_id)
+    #         h_models.append(cobra.io.load_json_model(str(md_dir.joinpath(h_model_id + ".json"))))
+    #     else:
+    #         print("\t" + "Reactions of " + h_model_id + " already in heterologous reaction database")
 
     # if not(hrd_model_origin):
     #     print(h_model_ids)
@@ -141,7 +146,6 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
     rxns_to_add = {}
     rxns_to_add_id = []    
     for h_model in h_models:
-        # extract heterologous reactions from other models
         print("Extract heterologous reactions from: " + h_model.id)
         rxns_to_add_from_model \
             = extract_heterologous_reactions_from_model(model, h_model, 
@@ -157,11 +161,13 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
         for rxn_id in rxns_to_add_from_model:
             if rxn_id in rxns_in_database:
                 # already extracted, add origin
-                hrd_model_origin.reactions.get_by_id(rxn_id).origin.append(h_model.id)
+                #hrd_model_origin.reactions.get_by_id(rxn_id).origin.append(h_model.id)
+                pass
             elif rxn_id in rxns_to_add_id:
                 # already extracted, add origin
                 # print("\tDuplicate heterologous reaction: "+ rxn_id)
-                rxns_to_add[rxn_id].origin.append(h_model.id)
+                #rxns_to_add[rxn_id].origin.append(h_model.id)
+                pass
             else:
                 # new heterologous reaction
                 rxn = h_model.reactions.get_by_id(rxn_id)
@@ -172,28 +178,25 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
                 rxns_to_add_id.append(rxn_id)
     
     # exclude reactions with irreasonable effect on growth
-    sol_wt = model.slim_optimize()
-    rxns_to_add_iter = rxns_to_add.copy()
-    for rxn_id, rxn in rxns_to_add_iter.items():
-        # add reaction to model
-        model.add_reactions([rxn])
-        # solve model
-        sol_h = model.slim_optimize()
-        # check growth
-        if sol_h > (sol_wt*2):
-            # exclude reaction
-            del(rxns_to_add[rxn_id])
-            del(rxns_to_add_id[rxns_to_add_id.index(rxn_id)])
-            print("Disregard " + rxn_id + " (Objective value: " + str(round(sol_h, 3)) + ")")
-            
-        # remove reaction again and continue
-        model.remove_reactions([model.reactions.get_by_id(rxn_id)])
+    with model: 
+        sol_wt = model.slim_optimize()
+        rxns_to_add_iter = rxns_to_add.copy()
+        for rxn_id, rxn in rxns_to_add_iter.items():
+            model.add_reactions([rxn])
+            sol_h = model.slim_optimize()
+            if sol_h > (sol_wt*2):
+                del(rxns_to_add[rxn_id])
+                del(rxns_to_add_id[rxns_to_add_id.index(rxn_id)])
+                print("Disregard " + rxn_id + " (Objective value: " + str(round(sol_h, 3)) + ")")
+                
+            # remove reaction again and continue
+            model.remove_reactions([model.reactions.get_by_id(rxn_id)])
     
     
     # save heterologous reaction database, unassessed
     extend_database_model(hrd_model_origin, rxns_to_add)
     
-    
+    # save unassessed heterologous database model
     if save_models:
         save_heterologous_database_model(
             hrd_model_origin,
@@ -201,88 +204,145 @@ def get_heterologous_reactions(model, config=config_default, reprocess=False,
             model_path,
             reaction_direction_assessed=False
             )
-        # model_dir = Path(model_path).joinpath(
-        #     hrd_model_format.format(hrd_model_name, hrd_model_feature))
-        # with open(str(model_dir), "wb") as f:
-        #     pickle.dump(hrd_model_origin, f)
-        
-   
+ 
         
     if config.directionality_assessment:
-        # continue with reaction direction assessment
-        # load unassessed heterologous reactions           
-        pass
-    else:
-        # return database model
-        return None, hrd_model_origin
-    
-   
-    
-   
-    # set up heterologous reaction database model with assessed directions
-        
-    # check if heterologous reactions database exist for model, directions assessed
-    # hrd_model_feature = "_dir_assessed"
-    
-    if reprocess:
-        hrd_model = []
-    else:
-        hrd_model = load_heterologous_database_model(
-            model_name=hrd_model_name,
-            model_path=model_path,
-            reaction_direction_assessed=True
+        # continue with reaction direction assessment         
+        hrd_model = model_directionality_assessement(
+            hrd_model_origin,
+            config=config,
+            model_name=hrd_model_name
             )
-    
-    
         
-    if reprocess or not(hrd_model):
-        # set up new database model in a cobra format
-        hrd_model = cobra.Model(hrd_model_name)
-        setattr(hrd_model, "heterologous_model_sources", [])
+        # save heterologous database model
+        if save_models:
+            save_heterologous_database_model(
+                hrd_model,
+                hrd_model_name,
+                model_path,
+                reaction_direction_assessed=True
+                )
+    
+    else:
+        hrd_model = None
+        
+        
+
+
+    return hrd_model, hrd_model_origin
+    
+   
+    
+   
+    # # set up heterologous reaction database model with assessed directions
+        
+    # # check if heterologous reactions database exist for model, directions assessed
+    # # hrd_model_feature = "_dir_assessed"
+    
+    # if reprocess:
+    #     hrd_model = []
+    # else:
+    #     hrd_model = load_heterologous_database_model(
+    #         model_name=hrd_model_name,
+    #         model_path=model_path,
+    #         reaction_direction_assessed=True
+    #         )
+          
+    # if reprocess or not(hrd_model):
+    #     # set up new database model in a cobra format
+    #     hrd_model = cobra.Model(hrd_model_name)
+    #     #setattr(hrd_model, "heterologous_model_sources", [])
+        
+    # # get original reactions from database
+    # rxns_to_add = {}
+    # rxns_to_add_id = []
+    # for rxn in hrd_model_origin.reactions:
+    #     rxn_id = rxn.id
+    #     rxns_to_add[rxn_id] = rxn
+    #     rxns_to_add_id.append(rxn_id)
     
     
-    # check which reactions are not assessed yet
-    for rxn in hrd_model.reactions:
-        if rxn.id in rxns_to_add_id:
-            # reaction already assessed for direction, delete
-            del(rxns_to_add[rxn.id])
-            del(rxns_to_add_id[rxns_to_add_id.index(rxn.id)])
+    # # check which reactions are not assessed yet
+    # for rxn in hrd_model.reactions:
+    #     if rxn.id in rxns_to_add_id:
+    #         # reaction already assessed for direction, delete
+    #         del(rxns_to_add[rxn.id])
+    #         del(rxns_to_add_id[rxns_to_add_id.index(rxn.id)])
     
-    # evaluate reactions in terms of reaction directionalities
+    # # evaluate reactions in terms of reaction directionalities
+    # if len(rxns_to_add) > 0:
+    #     rxns_to_add, directions = evaluate_reaction_directionalities(model, rxns_to_add,
+    #                                                       config)
+      
+    #     # extend database models with heterologous reactions
+    #     extend_database_model(hrd_model, rxns_to_add)
+         
+    #     # save reaction direction (annotated and from thermodynamic analysis)
+    #     if hasattr(hrd_model, "reaction_directions"):
+    #         hrd_model["reaction_directions"] = \
+    #             pd.concat([hrd_model["reaction_directions"], directions])
+    #     else:
+    #         setattr(hrd_model, "reaction_directions", directions)
+    
+    # # save database
+    # if save_models:
+    #     save_heterologous_database_model(
+    #         hrd_model,
+    #         hrd_model_name,
+    #         model_path,
+    #         reaction_direction_assessed=True
+    #         )
+    #     # model_dir = Path(model_path).joinpath(
+    #     #     hrd_model_format.format(hrd_model_name, hrd_model_feature))
+    #     # with open(str(model_dir), "wb") as f:
+    #     #     pickle.dump(hrd_model, f)
+
+                            
+    # print("\tNumber of heterologous reactions: " + str(len(hrd_model.reactions)))
+        
+    # return hrd_model, hrd_model_origin
+
+
+def model_directionality_assessement(model, config=config_default, model_name="hr_database"):
+    # write the docstrings for the reaction
+    """
+    assess reaction directions of heterologous reactions in a model
+
+    Parameters
+    ----------
+    model : cobra.Model
+        COBRA model.
+    config : module, optional
+        contains optional parameters. The default is config_default.
+    model_name : str, optional
+        name of the model. The default is "hr_database".
+    
+    Returns
+    -------
+    hrd_model : cobra.Model
+        COBRA model containing all identified heterologous reactions. Reaction directions assessed
+
+    """
+ 
+    
+    hrd_model = cobra.Model(model_name)
+    
+    # get unassessed reactions from database
+    rxns_to_add = {}
+    rxns_to_add_id = []
+    for rxn in model.reactions:
+        rxn_id = rxn.id
+        rxns_to_add[rxn_id] = rxn
+        rxns_to_add_id.append(rxn_id)
+           
     if len(rxns_to_add) > 0:
         rxns_to_add, directions = evaluate_reaction_directionalities(model, rxns_to_add,
                                                           config)
       
         # extend database models with heterologous reactions
         extend_database_model(hrd_model, rxns_to_add)
-         
-        # save reaction direction (annotated and from thermodynamic analysis)
-        if hasattr(hrd_model, "reaction_directions"):
-            hrd_model["reaction_directions"] = \
-                pd.concat([hrd_model["reaction_directions"], directions])
-        else:
-            setattr(hrd_model, "reaction_directions", directions)
-    
-    # save database
-    if save_models:
-        save_heterologous_database_model(
-            hrd_model,
-            hrd_model_name,
-            model_path,
-            reaction_direction_assessed=True
-            )
-        # model_dir = Path(model_path).joinpath(
-        #     hrd_model_format.format(hrd_model_name, hrd_model_feature))
-        # with open(str(model_dir), "wb") as f:
-        #     pickle.dump(hrd_model, f)
-
-                            
-    print("\tNumber of heterologous reactions: " + str(len(hrd_model.reactions)))
         
-    return hrd_model, hrd_model_origin
-
-
-
+    return hrd_model
 
 
 def extend_database_model(hrd_model, rxns_to_add):
@@ -321,8 +381,8 @@ def extend_database_model(hrd_model, rxns_to_add):
             hrd_model_rxns[rxn_id] = rxn
          
         # extend database with origin models 
-        new_origin = list(set(rxn.origin).difference(set(hrd_model.heterologous_model_sources)))
-        hrd_model.heterologous_model_sources.extend(new_origin)
+        #new_origin = list(set(rxn.origin).difference(set(hrd_model.heterologous_model_sources)))
+        #hrd_model.heterologous_model_sources.extend(new_origin)
         # for origin in rxn.origin:
         #     if not(origin in hrd_model.heterologous_model_sources):
         #         hrd_model.heterologous_model_sources.append(origin)
