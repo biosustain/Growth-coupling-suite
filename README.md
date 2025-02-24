@@ -21,5 +21,5 @@ If you use the Growth-Coupling Suite in your research or find it helpful for you
 
 > **Metabolic growth-coupling strategies for in vivo enzyme selection systems**  
 > Tobias B. Alter, Pascal A. Pieters, Colton J. Lloyd, Adam M. Feist, Emre Özdemir, Bernhard O. Palsson, Daniel C. Zielinski  
-> *Metabolic Engineerinf Communication, 2025*  
+> *Metabolic Engineering Communications, 2025*  
 > DOI or URL: [https://doi.org/10.1016/j.mec.2025.e00257](https://doi.org/10.1016/j.mec.2025.e00257)
