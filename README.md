@@ -12,5 +12,14 @@ Refer to and run the example scripts in 'examples' (conduct_gcOpt_optimization_p
 Once design solutions were found and analyzed with the StrainDesignAnalyzer (part of the Growth Coupling Suite), a summary including unique, valid strain designs and their metadata is saved in an Excel format to the specified location (cf. the parameter 'results_dir' of the 'growth_coupling_summary' function). 
 
 ## Note  
-The first computation with a new model can be quite time consuming due to the curation of the heterologous reaction database, if heterologous insertions are allowed (num_addins>0 in the gcOpt_config_file). The database will automatically be saved for later applications of that model.  
+The first computation with a new model can be quite time consuming due to the curation of the heterologous reaction database, if heterologous insertions are allowed (num_addins>0 in the gcOpt_config_file). The database will automatically be saved for later applications of that model.
 A heterologous reaction database model can be manually built and saved beforehand by using the 'heterologous_reaction_processing' module. Refer to 'tests/create_heterologous_reaction_database_model.ipynb' for a respective example.
+
+## Citation
+
+If you use the Growth-Coupling Suite in your research or find it helpful for your work, please cite the following paper:
+
+> **Metabolic growth-coupling strategies for in vivo enzyme selection systems**  
+> Tobias B. Alter, Pascal A. Pieters, Colton J. Lloyd, Adam M. Feist, Emre Özdemir, Bernhard O. Palsson, Daniel C. Zielinski  
+> *Metabolic Engineerinf Communication, 2025*  
+> DOI or URL: [https://doi.org/10.1016/j.mec.2025.e00257](https://doi.org/10.1016/j.mec.2025.e00257)
